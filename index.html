@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relação de Viagens</title>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --text: #1a1a2e;
+  --text2: #555;
+  --accent: #1B3A5C;
+  --accent2: #2d6aa0;
+  --green: #0d9f6e;
+  --red: #e74c3c;
+  --orange: #f39c12;
+  --border: #e0e0e0;
+  --shadow: 0 2px 8px rgba(0,0,0,.08);
+  --radius: 10px;
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1117;--surface:#1a1d2e;--text:#e4e4e7;--text2:#9ca3af;
+    --accent:#3b82f6;--accent2:#60a5fa;--border:#2d3044;
+    --shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1117;--surface:#1a1d2e;--text:#e4e4e7;--text2:#9ca3af;
+  --accent:#3b82f6;--accent2:#60a5fa;--border:#2d3044;
+  --shadow:0 2px 8px rgba(0,0,0,.3);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+a{color:var(--accent2)}
+
+/* LOGIN */
+.login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem;max-width:380px;width:90%;text-align:center;box-shadow:var(--shadow)}
+.login-box h2{color:var(--accent);margin-bottom:.3rem;font-size:1.3rem}
+.login-box p{color:var(--text2);font-size:.85rem;margin-bottom:1.5rem}
+.login-box input{width:100%;padding:.7rem 1rem;border:1px solid var(--border);border-radius:6px;font-size:1rem;background:var(--bg);color:var(--text);margin-bottom:1rem}
+.login-box button{width:100%;padding:.7rem;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer;font-weight:600}
+.login-box button:hover{opacity:.9}
+.login-error{color:var(--red);font-size:.85rem;margin-top:.5rem;display:none}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:var(--bg);z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem}
+.spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LAYOUT */
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+header.top{background:linear-gradient(135deg,#1B3A5C,#2d6aa0);color:#fff;padding:1.5rem 0;margin-bottom:2rem}
+header .bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem}
+header .brand{font-size:.8rem;text-transform:uppercase;letter-spacing:1px;opacity:.8}
+header h1{font-size:1.5rem;font-weight:700}
+header .period{font-size:.85rem;background:rgba(255,255,255,.2);padding:.2rem .8rem;border-radius:20px;margin-top:.3rem;display:inline-block}
+.toolbar{display:flex;gap:.5rem;flex-wrap:wrap}
+.toolbar button{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.8rem}
+.toolbar button:hover{background:rgba(255,255,255,.25)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;box-shadow:var(--shadow)}
+.kpi .label{font-size:.75rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.kpi .value{font-size:1.6rem;font-weight:700;color:var(--accent);margin-top:.2rem}
+
+/* SECTIONS */
+section{margin-bottom:2rem}
+section h2{font-size:1.15rem;font-weight:700;margin-bottom:1rem;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:.4rem}
+
+/* CHARTS */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem}
+@media(max-width:700px){.chart-row{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;box-shadow:var(--shadow)}
+.chart-card h3{font-size:.95rem;margin-bottom:.8rem;color:var(--text)}
+
+/* INSIGHTS */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin-bottom:2rem}
+.insight{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow)}
+.insight .it{font-size:.75rem;color:var(--text2);text-transform:uppercase;margin-bottom:.3rem}
+.insight .iv{font-size:1rem;font-weight:600}
+
+/* FILTERS */
+.filters{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.filters input,.filters select{padding:.5rem .8rem;border:1px solid var(--border);border-radius:6px;font-size:.85rem;background:var(--surface);color:var(--text)}
+.filters input{flex:1;min-width:180px}
+.month-btn{padding:.4rem .8rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-size:.8rem}
+.month-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+th{background:var(--accent);color:#fff;padding:.7rem .8rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{background:var(--accent2)}
+td{padding:.6rem .8rem;border-bottom:1px solid var(--border);font-size:.85rem;vertical-align:middle}
+tr:hover td{background:rgba(0,0,0,.02)}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.72rem;font-weight:600}
+.badge-exec{background:#d1fae5;color:#065f46}
+.badge-canc{background:#fee2e2;color:#991b1b}
+:root[data-theme="dark"] .badge-exec{background:#064e3b;color:#6ee7b7}
+:root[data-theme="dark"] .badge-canc{background:#7f1d1d;color:#fca5a5}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .badge-exec{background:#064e3b;color:#6ee7b7}:root:not([data-theme="light"]) .badge-canc{background:#7f1d1d;color:#fca5a5}}
+
+.detail-row td{padding:0;border-bottom:1px solid var(--border)}
+.detail-row .legs-wrap{padding:.5rem 1rem .8rem 2.5rem}
+.legs-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.legs-table th{background:var(--accent);padding:.4rem .5rem;font-size:.72rem}
+.legs-table td{padding:.35rem .5rem;border-bottom:1px solid var(--border)}
+.chevron{transition:transform .2s;display:inline-block;font-size:.7rem;color:var(--text2)}
+.chevron.open{transform:rotate(90deg)}
+
+/* CONTRACT */
+.contract-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow);margin-bottom:2rem}
+.contract-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.contract-grid{grid-template-columns:1fr}}
+.contract-item{font-size:.85rem}
+.contract-item .cl{color:var(--text2);font-size:.72rem;text-transform:uppercase}
+.contract-item .cv{font-weight:600;margin-top:.1rem}
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:.5rem;margin:1.5rem 0}
+.fiscais-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem}
+@media(max-width:600px){.fiscais-grid{grid-template-columns:1fr}}
+.fiscal-card{background:var(--bg);padding:.6rem;border-radius:6px;font-size:.8rem}
+.fiscal-card .fc-role{font-size:.7rem;color:var(--text2);text-transform:uppercase}
+
+/* DATA SOURCE */
+.data-source{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:2rem;font-size:.8rem;color:var(--text2);text-align:center}
+.data-source .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:4px;vertical-align:middle}
+
+footer{text-align:center;padding:1.5rem 0;color:var(--text2);font-size:.8rem;border-top:1px solid var(--border);margin-top:2rem}
+
+@media print{.login-overlay,.toolbar,.filters,.data-source{display:none!important}header.top{background:#1B3A5C!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+<div class="login-box">
+  <h2>MPTO</h2>
+  <p>Relação de Viagens - Acesso Restrito</p>
+  <input type="password" id="loginPass" placeholder="Senha de acesso" autofocus>
+  <button onclick="doLogin()">Entrar</button>
+  <div class="login-error" id="loginError">Senha incorreta</div>
+</div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+<div class="spinner"></div>
+<p style="color:var(--text2);font-size:.9rem">Carregando dados do Google Sheets...</p>
+</div>
+
+<!-- MAIN -->
+<div id="mainContent" style="display:none">
+
+<header class="top">
+<div class="container bar">
+  <div>
+    <div class="brand">Ministério Público do Estado do Tocantins</div>
+    <h1 id="pageTitle">Relação de Viagens</h1>
+    <span class="period" id="pagePeriod">Outubro &amp; Novembro de 2026</span>
+  </div>
+  <div class="toolbar">
+    <button id="themeToggle" onclick="toggleTheme()">Tema</button>
+    <button onclick="window.print()">Imprimir / PDF</button>
+    <button onclick="location.reload()">Atualizar dados</button>
+  </div>
+</div>
+</header>
+
+<main class="container">
+
+<div class="data-source" id="dataSource">
+  <span class="live-dot"></span> Dados carregados automaticamente do Google Sheets.
+  <span id="lastUpdate"></span>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<section>
+<h2>Visão geral do período</h2>
+<div class="chart-row">
+  <div class="chart-card"><h3>Distribuição por mês</h3><div id="donutChart"></div></div>
+  <div class="chart-card"><h3>Top motivos por valor</h3><div id="barChart"></div></div>
+</div>
+</section>
+
+<section>
+<h2>Destaques</h2>
+<div class="insight-grid" id="insightGrid"></div>
+</section>
+
+<section>
+<h2>Relação detalhada de viagens</h2>
+<div class="filters">
+  <input type="text" id="searchInput" placeholder="Buscar passageiro ou motivo...">
+  <div id="monthFilter"></div>
+  <select id="statusFilter"><option value="">Todos os status</option><option value="Executado">Executado</option><option value="Cancelado">Cancelado</option></select>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th data-sort="nome">Passageiro &#9662;</th>
+  <th data-sort="motivo">Motivo</th>
+  <th data-sort="mes">Mês</th>
+  <th data-sort="valor">Valor &#9662;</th>
+  <th data-sort="status">Status</th>
+  <th></th>
+</tr>
+</thead>
+<tbody id="tripsBody"></tbody>
+</table>
+</div>
+</section>
+
+<section>
+<h2>Execução do contrato de agenciamento de viagens</h2>
+<div class="contract-card" id="contractCard"></div>
+</section>
+
+</main>
+<footer>
+  <div class="container">MPTO - Coordenadoria de Cerimonial e Relações Públicas &middot; <span id="footerUpdate"></span></div>
+</footer>
+</div>
+
+<script>
+/* =============================================
+   CONFIGURAÇÃO - URLs do Google Sheets
+   =============================================
+   Substitua as URLs abaixo pelas URLs reais da sua planilha.
+   O formato é: https://docs.google.com/spreadsheets/d/SEU_ID/export?format=csv&gid=NUMERO_GID
+
+   Para encontrar o gid de cada aba:
+   1. Abra a planilha no Google Sheets
+   2. Clique na aba desejada
+   3. O gid aparece na URL: ...gid=XXXXXXXX
+
+   Aba "Viagens" geralmente é gid=0 (primeira aba)
+   ============================================= */
+const SHEETS = {
+  viagens:  '__VIAGENS_CSV_URL__',
+  trechos:  '__TRECHOS_CSV_URL__',
+  contrato: '__CONTRATO_CSV_URL__',
+  config:   '__CONFIG_CSV_URL__'
+};
+
+/* CSV Parser */
+function parseCSV(text) {
+  const lines = [];
+  let current = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i+1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { current.push(field.trim()); field = ''; }
+      else if (ch === '\n' || (ch === '\r' && text[i+1] === '\n')) {
+        current.push(field.trim()); field = '';
+        if (current.length > 1 || current[0] !== '') lines.push(current);
+        current = [];
+        if (ch === '\r') i++;
+      } else field += ch;
+    }
+  }
+  if (field || current.length) { current.push(field.trim()); lines.push(current); }
+  if (!lines.length) return [];
+  const headers = lines[0];
+  return lines.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i] || '');
+    return obj;
+  });
+}
+
+/* Globals */
+let TRIPS = [], LEGS = [], CONTRACT = {}, CONFIG = {};
+
+/* Theme */
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('rv_theme', next); } catch(e) {}
+}
+(function(){try{const t=localStorage.getItem('rv_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+
+/* Login */
+function doLogin() {
+  const input = document.getElementById('loginPass').value;
+  const correctPass = CONFIG.senha || 'mpto2026';
+  if (input === correctPass) {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    try { sessionStorage.setItem('rv_auth', '1'); } catch(e) {}
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+/* Fetch */
+async function fetchSheet(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return parseCSV(await r.text());
+}
+
+function parseNum(s) {
+  if (!s) return 0;
+  // Handle both 1.234,56 (BR) and 1234.56 (EN) formats
+  const cleaned = String(s).replace(/[R$\s]/g, '');
+  // If has comma as decimal: 1.234,56
+  if (/,\d{1,2}$/.test(cleaned)) {
+    return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
+  }
+  return parseFloat(cleaned) || 0;
+}
+
+async function loadData() {
+  if (SHEETS.viagens.startsWith('__')) {
+    try {
+      const r = await fetch('data.json');
+      if (r.ok) {
+        const d = await r.json();
+        TRIPS = d.viagens || []; LEGS = d.trechos || [];
+        CONTRACT = d.contrato || {}; CONFIG = d.config || {};
+        return;
+      }
+    } catch(e) {}
+    document.getElementById('dataSource').innerHTML = '<span style="color:var(--red)">&#9888; Configure as URLs do Google Sheets no index.html (const SHEETS).</span>';
+    return;
+  }
+
+  const [viagens, trechos, contrato, config] = await Promise.all([
+    fetchSheet(SHEETS.viagens), fetchSheet(SHEETS.trechos),
+    fetchSheet(SHEETS.contrato), fetchSheet(SHEETS.config)
+  ]);
+
+  TRIPS = viagens.map((r, i) => ({
+    id: parseInt(r['ID']) || i+1,
+    nome: r['Passageiro'] || '',
+    motivo: r['Motivo da Viagem'] || '',
+    valor: parseNum(r['Valor Total (R$)']),
+    status: r['Status'] || 'Executado',
+    palestrante: (r['Palestrante'] || '').toLowerCase() === 'sim',
+    mes: r['Mês'] || ''
+  }));
+
+  LEGS = trechos.map(r => ({
+    idViagem: parseInt(r['ID Viagem']) || 0,
+    tipo: r['Tipo'] || '', trecho: r['Trecho'] || '',
+    data: r['Data'] || '', horario: r['Horário'] || '',
+    voo: r['Voo'] || '', valor: parseNum(r['Valor Trecho (R$)'])
+  }));
+
+  CONTRACT = {};
+  contrato.forEach(r => {
+    const keys = Object.keys(r); const k = r[keys[0]] || ''; const v = r[keys[1]] || '';
+    if (k.includes('Processo')) CONTRACT.processo = v;
+    else if (k.includes('Empenho')) CONTRACT.ne = v;
+    else if (k.includes('Fornecedor')) CONTRACT.fornecedor = v;
+    else if (k.includes('Início')) CONTRACT.vigInicio = v;
+    else if (k.includes('Fim')) CONTRACT.vigFim = v;
+    else if (k.includes('Total')) CONTRACT.valorTotal = parseNum(v) || 880000;
+    else if (k.includes('Executado')) CONTRACT.valorExec = parseNum(v) || 543307.08;
+    else if (k.includes('Saldo')) CONTRACT.saldo = parseNum(v) || 336692.92;
+    else if (k.includes('Titular 1')) CONTRACT.fiscal1 = v;
+    else if (k.includes('Titular 2')) CONTRACT.fiscal2 = v;
+    else if (k.includes('Substituto 1')) CONTRACT.subs1 = v;
+    else if (k.includes('Substituto 2')) CONTRACT.subs2 = v;
+  });
+
+  config.forEach(r => {
+    const keys = Object.keys(r); const k = r[keys[0]] || ''; const v = r[keys[1]] || '';
+    if (k.includes('Senha')) CONFIG.senha = v;
+    else if (k.includes('Título')) CONFIG.titulo = v;
+    else if (k.includes('Subtítulo')) CONFIG.subtitulo = v;
+    else if (k.includes('Atualizado')) CONFIG.atualizado = v;
+  });
+}
+
+/* Format */
+function fmtBRL(v) { return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+/* KPIs */
+function renderKPIs() {
+  const exec = TRIPS.filter(t => t.status === 'Executado');
+  const canc = TRIPS.filter(t => t.status === 'Cancelado');
+  const totExec = exec.reduce((s,t) => s+t.valor, 0);
+  const totCanc = canc.reduce((s,t) => s+t.valor, 0);
+  const unique = new Set(TRIPS.map(t => t.nome)).size;
+  document.getElementById('kpis').innerHTML = [
+    {label:'Viagens no período', value:TRIPS.length},
+    {label:'Passageiros únicos', value:unique},
+    {label:'Total executado (Out/Nov)', value:fmtBRL(totExec), id:'kpiExec'},
+    {label:'Total cancelado', value:fmtBRL(totCanc)}
+  ].map(k=>`<div class="kpi"><div class="label">${k.label}</div><div class="value" ${k.id?'id="'+k.id+'"':''}>${k.value}</div></div>`).join('');
+}
+
+/* Donut */
+function drawDonut() {
+  const byMonth = {};
+  TRIPS.filter(t=>t.status==='Executado').forEach(t=>{byMonth[t.mes]=(byMonth[t.mes]||0)+t.valor;});
+  const entries = Object.entries(byMonth).sort((a,b)=>b[1]-a[1]);
+  const total = entries.reduce((s,e)=>s+e[1],0);
+  const colors = ['#3b82f6','#f59e0b','#10b981','#ef4444'];
+  const R=70, cx=90, cy=90, C=2*Math.PI*R;
+  let offset=0, arcs='', legend='';
+  entries.forEach(([month,val],i)=>{
+    const pct=val/total, dash=pct*C;
+    arcs+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${colors[i%colors.length]}" stroke-width="28" stroke-dasharray="${dash} ${C-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset+=dash;
+    legend+=`<div style="display:flex;align-items:center;gap:6px;font-size:.82rem"><span style="width:10px;height:10px;border-radius:2px;background:${colors[i%colors.length]};flex-shrink:0"></span>${month}: ${fmtBRL(val)} (${(pct*100).toFixed(0)}%)</div>`;
+  });
+  document.getElementById('donutChart').innerHTML=`<div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;justify-content:center"><svg viewBox="0 0 180 180" width="160" height="160">${arcs}<text x="${cx}" y="${cy-6}" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="700">${fmtBRL(total)}</text><text x="${cx}" y="${cy+10}" text-anchor="middle" fill="var(--text2)" font-size="8">Total executado</text></svg><div style="display:flex;flex-direction:column;gap:6px">${legend}</div></div>`;
+}
+
+/* Bars */
+function drawBars() {
+  const byMotivo = {};
+  TRIPS.filter(t=>t.status==='Executado').forEach(t=>{byMotivo[t.motivo]=(byMotivo[t.motivo]||0)+t.valor;});
+  const sorted = Object.entries(byMotivo).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const max = sorted[0]?.[1]||1;
+  document.getElementById('barChart').innerHTML = sorted.map(([m,v])=>{
+    const pct=(v/max*100).toFixed(0);
+    const short = m.length>50?m.slice(0,47)+'...':m;
+    return `<div style="margin-bottom:.6rem"><div style="font-size:.78rem;margin-bottom:.2rem;color:var(--text2)" title="${m}">${short}</div><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:18px;background:var(--border);border-radius:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--accent);border-radius:4px"></div></div><span style="font-size:.78rem;font-weight:600;white-space:nowrap">${fmtBRL(v)}</span></div></div>`;
+  }).join('');
+}
+
+/* Insights */
+function drawInsights() {
+  const exec = TRIPS.filter(t=>t.status==='Executado');
+  const canc = TRIPS.filter(t=>t.status==='Cancelado');
+  const totExec = exec.reduce((s,t)=>s+t.valor,0);
+  const maxTrip = exec.reduce((a,b)=>a.valor>b.valor?a:b, exec[0]||{});
+  const nameCount = {};
+  TRIPS.forEach(t=>nameCount[t.nome]=(nameCount[t.nome]||0)+1);
+  const repeaters = Object.entries(nameCount).filter(e=>e[1]>1);
+  const avg = exec.length?totExec/exec.length:0;
+  const palestrantes = TRIPS.filter(t=>t.palestrante);
+  const items = [
+    {t:'Maior valor',v:maxTrip?`${maxTrip.nome} - ${fmtBRL(maxTrip.valor)}`:'-'},
+    {t:'Passageiros com mais de 1 viagem',v:repeaters.map(e=>`${e[0]} (${e[1]}x)`).join(', ')||'Nenhum'},
+    {t:'Ticket médio',v:fmtBRL(avg)},
+    {t:'Viagens de palestrantes',v:`${palestrantes.length} viagen(s)`},
+    {t:'Cancelamentos',v:`${canc.length} viagen(s) - ${fmtBRL(canc.reduce((s,t)=>s+t.valor,0))}`},
+    {t:'Total de viagens',v:`${TRIPS.length} (${exec.length} executadas, ${canc.length} canceladas)`}
+  ];
+  document.getElementById('insightGrid').innerHTML = items.map(i=>`<div class="insight"><div class="it">${i.t}</div><div class="iv">${i.v}</div></div>`).join('');
+}
+
+/* Table */
+const state = {search:'',month:'',status:'',sortKey:'id',sortDir:1};
+
+function filteredRows() {
+  let rows=[...TRIPS];
+  if(state.search){const q=state.search.toLowerCase();rows=rows.filter(t=>t.nome.toLowerCase().includes(q)||t.motivo.toLowerCase().includes(q));}
+  if(state.month) rows=rows.filter(t=>t.mes===state.month);
+  if(state.status) rows=rows.filter(t=>t.status===state.status);
+  rows.sort((a,b)=>{let va=a[state.sortKey],vb=b[state.sortKey];if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}return va<vb?-state.sortDir:va>vb?state.sortDir:0;});
+  return rows;
+}
+
+let openId=null;
+function renderTable() {
+  const rows=filteredRows();
+  const tb=document.getElementById('tripsBody');
+  tb.innerHTML=rows.map(t=>{
+    const isOpen=openId===t.id;
+    const badge=t.status==='Executado'?'badge-exec':'badge-canc';
+    let html=`<tr class="trip-row" data-id="${t.id}" style="cursor:pointer"><td>${t.nome}</td><td>${t.motivo}</td><td>${t.mes}</td><td style="text-align:right;white-space:nowrap">${fmtBRL(t.valor)}</td><td><span class="badge ${badge}">${t.status}</span></td><td><span class="chevron ${isOpen?'open':''}">&#9654;</span></td></tr>`;
+    if(isOpen){
+      const legs=LEGS.filter(l=>l.idViagem===t.id);
+      html+=`<tr class="detail-row"><td colspan="6"><div class="legs-wrap"><table class="legs-table"><thead><tr><th>Tipo</th><th>Trecho</th><th>Data</th><th>Horário</th><th>Voo</th><th>Valor</th></tr></thead><tbody>${legs.map(l=>`<tr><td>${l.tipo}</td><td>${l.trecho}</td><td>${l.data}</td><td>${l.horario}</td><td>${l.voo}</td><td style="text-align:right">${l.valor>0?fmtBRL(l.valor):'(incluso)'}</td></tr>`).join('')}</tbody></table></div></td></tr>`;
+    }
+    return html;
+  }).join('');
+  tb.querySelectorAll('.trip-row').forEach(tr=>{
+    tr.addEventListener('click',()=>{const id=parseInt(tr.dataset.id);openId=openId===id?null:id;renderTable();});
+  });
+}
+
+function renderMonthFilter() {
+  const months=[...new Set(TRIPS.map(t=>t.mes))].sort();
+  document.getElementById('monthFilter').innerHTML=
+    `<button class="month-btn ${state.month===''?'active':''}" data-m="">Todos</button>`+
+    months.map(m=>`<button class="month-btn ${state.month===m?'active':''}" data-m="${m}">${m}</button>`).join('');
+  document.querySelectorAll('.month-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{state.month=btn.dataset.m;renderMonthFilter();renderTable();});
+  });
+}
+
+/* Contract */
+function renderContract() {
+  const c=CONTRACT;
+  const total=c.valorTotal||880000, exec=c.valorExec||543307.08, saldo=c.saldo||(total-exec);
+  const pct=exec/total*100;
+  const R=60, C=Math.PI*R;
+  const dash=(pct/100)*C;
+  document.getElementById('contractCard').innerHTML=`
+    <div class="contract-grid">
+      <div class="contract-item"><div class="cl">Processo</div><div class="cv">${c.processo||'19.30.1060.0000526/2025-94'}</div></div>
+      <div class="contract-item"><div class="cl">Nota de Empenho</div><div class="cv">${c.ne||'2026NE000371'}</div></div>
+      <div class="contract-item"><div class="cl">Fornecedor</div><div class="cv">${c.fornecedor||'V&P Serviços de Viagens Ltda'}</div></div>
+      <div class="contract-item"><div class="cl">Vigência</div><div class="cv">${c.vigInicio||'10/02/2026'} a ${c.vigFim||'31/12/2026'}</div></div>
+    </div>
+    <div class="gauge-wrap">
+      <svg viewBox="0 0 140 80" width="200">
+        <path d="M 10 70 A 60 60 0 0 1 130 70" fill="none" stroke="var(--border)" stroke-width="12" stroke-linecap="round"/>
+        <path d="M 10 70 A 60 60 0 0 1 130 70" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${dash} ${C}"/>
+        <text x="70" y="55" text-anchor="middle" fill="var(--text)" font-size="16" font-weight="700">${pct.toFixed(1)}%</text>
+        <text x="70" y="70" text-anchor="middle" fill="var(--text2)" font-size="7">executado</text>
+      </svg>
+      <div style="display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;font-size:.85rem">
+        <div><span style="color:var(--text2)">Contratado:</span> <strong>${fmtBRL(total)}</strong></div>
+        <div><span style="color:var(--text2)">Executado:</span> <strong style="color:var(--green)">${fmtBRL(exec)}</strong></div>
+        <div><span style="color:var(--text2)">Saldo:</span> <strong style="color:var(--orange)">${fmtBRL(saldo)}</strong></div>
+      </div>
+    </div>
+    <h3 style="font-size:.85rem;margin-bottom:.5rem">Fiscais do contrato</h3>
+    <div class="fiscais-grid">
+      <div class="fiscal-card"><div class="fc-role">Fiscal Titular</div>${c.fiscal1||'Marcos Henrique da Cruz Braga (mat. 126002)'}</div>
+      <div class="fiscal-card"><div class="fc-role">Fiscal Titular</div>${c.fiscal2||'Leide da Silva Theophilo (mat. 121045)'}</div>
+      <div class="fiscal-card"><div class="fc-role">Fiscal Substituto</div>${c.subs1||'Daniela de Ulyssea Leal (mat. 99410)'}</div>
+      <div class="fiscal-card"><div class="fc-role">Fiscal Substituto</div>${c.subs2||'Amelia Ribeiro dos Santos (mat. 126045)'}</div>
+    </div>`;
+}
+
+/* Sort headers */
+document.querySelectorAll('th[data-sort]').forEach(th=>{
+  th.addEventListener('click',()=>{const key=th.dataset.sort;if(state.sortKey===key)state.sortDir*=-1;else{state.sortKey=key;state.sortDir=1;}renderTable();});
+});
+
+/* Filter listeners */
+document.getElementById('searchInput').addEventListener('input',e=>{state.search=e.target.value;renderTable();});
+document.getElementById('statusFilter').addEventListener('change',e=>{state.status=e.target.value;renderTable();});
+
+/* Boot */
+async function boot() {
+  // Pre-load data before login check so password from Config sheet is available
+  try {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('loginOverlay').style.display = 'none';
+    await loadData();
+    document.getElementById('loadingOverlay').style.display = 'none';
+  } catch(err) {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    console.error(err);
+  }
+
+  // Check session
+  let authed = false;
+  try { authed = sessionStorage.getItem('rv_auth') === '1'; } catch(e) {}
+
+  if (authed) {
+    document.getElementById('mainContent').style.display = 'block';
+  } else {
+    document.getElementById('loginOverlay').style.display = 'flex';
+  }
+
+  if (CONFIG.titulo) document.getElementById('pageTitle').textContent = CONFIG.titulo;
+  if (CONFIG.subtitulo) document.getElementById('pagePeriod').textContent = CONFIG.subtitulo;
+  if (CONFIG.atualizado) {
+    document.getElementById('lastUpdate').textContent = 'Atualizado em ' + CONFIG.atualizado;
+    document.getElementById('footerUpdate').textContent = 'Atualizado em ' + CONFIG.atualizado;
+  }
+
+  renderKPIs(); drawDonut(); drawBars(); drawInsights();
+  renderMonthFilter(); renderTable(); renderContract();
+}
+boot();
+</script>
+</body>
+</html>
